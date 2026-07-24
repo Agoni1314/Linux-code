@@ -1,13 +1,9 @@
-#include<iostream>
-#include<string>
-#include<sys/types.h>
-#include<sys/stat.h>
-#include<fcntl.h>
-#include<unistd.h>
+
 #include"comm.hpp"
 
 int main()
 {
+  /*   //write
     int fd = open(FIFO_FILE, O_WRONLY);
 if (fd < 0)
 {
@@ -15,18 +11,23 @@ if (fd < 0)
     return 2;
 }
 
+// 写入操作
+std::string message;
+int cnt = 1;
+pid_t id = getpid();
 while(true)
 {
-    std::cout << "Please Enter# ";
-    std::string message;
-    std::cin >> message;
-
-    int n = write(fd, message.c_str(), message.size());
-    if(n > 0)
-    {
-    }
+    std::cout << "Please Enter…… ";
+    std::getline(std::cin, message);
+    message += (", message number: " + std::to_string(cnt++) + ", [" + std::to_string(id) + "]");
+    write(fd, message.c_str(), message.size());
 }
 
-    close(fd);
+    close(fd); */
+
+     FileOpen writerfile(PATH,FILENAME);
+     writerfile.OpenForWrite();
+     writerfile.Write();
+     writerfile.Close();
     return 0;
 }
