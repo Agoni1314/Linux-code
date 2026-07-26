@@ -22,8 +22,9 @@ int main()
     int index=0;
     for(char c='A';c<='Z';c++,index+=2)
     {
+            sleep(1);
         mem[index]=c;
-        sleep(1);
+    
         mem[index+1]=c;
         sleep(1);
         mem[index+2]=0;

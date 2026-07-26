@@ -1,3 +1,6 @@
+#ifndef FIFO_HPP
+#define FIFO_HPP
+
 
 #include <iostream>
 #include <cstdio>
@@ -98,13 +101,19 @@ class FileOpen
         } */
 
         char c='c';
-        write(_fd,&c,1);
+        int n =write(_fd,&c,1);
+        printf("尝试唤醒:%d\n",n);
     }
     bool Wait()
     {
         char c;
          int number=read(_fd,&c,1);
-         if(c>0) return true;
+         if(number>0)
+         {
+            printf("醒来：%d\n",number);
+            return true;
+         } 
+         
         
     }
     void Close()
@@ -123,3 +132,5 @@ class FileOpen
     std::string _fifoname;
     int  _fd;
 };
+
+#endif

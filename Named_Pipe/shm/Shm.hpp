@@ -1,13 +1,14 @@
 #pragma once
 
+#include <iostream>
 #include <cstdio>
-#include <cstdlib>
-#include <sys/shm.h>
+#include <string>
 #include <sys/types.h>
 #include <sys/ipc.h>
-#include<unistd.h>
-#include<string>
-#include"Fifo.hpp"
+#include <sys/shm.h>
+#include <unistd.h>
+#include "Comm.hpp"
+
 
 const int gdefaultid =-1;
 const int gsize=4096;
@@ -41,8 +42,9 @@ public:
     }
     ~Shm()
     {
+        std::cout << _usertype << std::endl;
         if(_usertype==CREATER)
-        Destory();
+        Destroy();
     }
   void *VirtualAddr()
     {
@@ -53,10 +55,13 @@ public:
     {
         return _size;
     }
-   
-    
-   
-    
+   void Attr()
+   {
+        struct shmid_ds ds;
+        int n =shmctl(_shmid,IPC_STAT,&ds);
+        printf("shm_segsz: %ld\n",ds.shm_segsz);
+        printf("key: 0x%x\n",ds.shm_perm.__key);
+   }
     private:
         // 创建的一定要是是一个全新的共享内存
         void CreateHelper(int flg)
@@ -69,7 +74,7 @@ public:
         // printf("key: 0x%x\n", k);
             // _shmid = shmget(k, _size, IPC_CREAT | IPC_EXCL |gmode);
             printf("key: 0x%x\n", _key);
-            _shmid = shmget(k, _size, flg);
+            _shmid = shmget(_key, _size, flg);
             if (_shmid < 0)
             {
                 ERR_EXIT("shmget");
@@ -89,6 +94,14 @@ public:
                 ERR_EXIT("shmat");
             }
             printf("attach success\n");
+        }
+        void Detch()
+        {
+            int n=shmdt(_start_mem);
+            if(n==0)
+            {
+                printf("detach success");
+            }
         }
         void Get()
         {

@@ -12,9 +12,12 @@ int main()
     shm.VirtualAddr();
     sleep(5);
     shm.Destroy(); */
+     
+    Shm shm(pathname,projid,CREATER);
+    sleep(5);
+    shm.Attr();
 
-
-        NamedFifo fifo("/", FILENAME);
+       /*  NamedFifo fifo("/", FILENAME);
 
         // 文件操作了
         FileOper readerfile(PATH, FILENAME);
@@ -36,6 +39,6 @@ int main()
    }
     shm.Size();
 
-    readerfile.Close();
+    readerfile.Close(); */
     return 0;
 }
