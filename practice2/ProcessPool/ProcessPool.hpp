@@ -5,6 +5,9 @@
 #include<vector>
 #include<cstdio>
 #include<unistd.h>
+#include<sys/wait.h>
+#include"Task.hpp"
+
 class Channel
 {
     public:
@@ -31,6 +34,15 @@ class Channel
         {
             int n=write(_wfd,&code,sizeof(code));
             (void)n;
+        }
+        void Close()
+        {
+            close(_wfd);
+        }
+    void Wait()
+        {
+            pid_t rid=waitpid(_subid,nullptr,0);
+            (void)rid;
         }
     private:
         int _wfd;
@@ -64,6 +76,44 @@ class ChannelManage
         _next%=_channels.size();
         return c;
     }
+     void StopSubProcess()
+    {
+        
+        for(auto &channel:_channels)
+        {
+            channel.Close();
+            std::cout<<"关闭:"<<channel.Name()<<std::endl;
+        }
+      
+    }
+     void WaitSubProcess()
+     {
+        
+        for(auto &channel:_channels)
+        {
+            channel.Wait();
+             std::cout<<"回收:"<<channel.Name()<<std::endl;
+        }
+     } 
+      //解决方案1
+    /*  void CloseAddWait()
+     {
+          for(auto &channel:_channels)
+        {
+            channels[i].Close();
+            std::cout<<"关闭:"<<channel.Name()<<std::endl;
+            channels[i].Wait();
+             std::cout<<"回收:"<<channel.Name()<<std::endl;
+        }
+     } */
+    void CloseAll()
+    {
+        for(auto &channel:_channels)
+        {
+            channel.Close();
+            
+        }
+    }
     private:
     std::vector<Channel> _channels;
     int _next;
@@ -74,7 +124,11 @@ class ProcessPool
 {
     public:
     ProcessPool(int num):_porcess_num(num)
-    {}
+    {
+        _tm.Register(PrintLog);
+        _tm.Register(Download);
+        _tm.Register(Upload);
+    }
     ~ProcessPool(){}
     bool Create()
     {
@@ -93,6 +147,10 @@ class ProcessPool
         {
             //child
             //关闭不需要的文件描述符
+            std::cout << "####################" << "第" << i << "次" << std::endl;
+            _cm.PrintChannel();
+            std::cout << "####################" << std::endl;
+            _cm.CloseAll(); 
             close(pipefd[1]);
             work(pipefd[0]);
             close(pipefd[0]);
@@ -123,6 +181,7 @@ class ProcessPool
                     continue;
                 }
          std::cout << "子进程[" << getpid() << "]收到一个任务码: " << code << std::endl;
+         _tm.Exectue(code);
             }
             else if(n==0)
             {
@@ -141,7 +200,7 @@ class ProcessPool
     {
         _cm.PrintChannel();
     }
-    void PushTask(int taskcode)
+   /*  void PushTask(int taskcode)
     {
         //选择一个信道
         auto &c=_cm.Select();
@@ -149,11 +208,31 @@ class ProcessPool
         //发送
         c.Send(taskcode);
         std::cout<<"发送了一个任务码:"<<taskcode<<std::endl;
+    } */
+
+     void Run()
+    {
+        //选择一个任务
+        int taskcode = _tm.Code();
+        //选择一个信道（子进程）
+        auto &c=_cm.Select();
+         std::cout<<"选择一个子进程:"<<c.Name()<<std::endl;
+        //发送
+        c.Send(taskcode);
+        std::cout<<"发送了一个任务码:"<<taskcode<<std::endl;
     }
-   
+    
+    void Stop()
+    {
+        //关闭父进程的wdf
+        _cm.StopSubProcess();
+          //回收子进程
+        _cm.WaitSubProcess();
+    }
     private:
     ChannelManage _cm;
     int _porcess_num;
+    TaskManage _tm;
 };
 
 
