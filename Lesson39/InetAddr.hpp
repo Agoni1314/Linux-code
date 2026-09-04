@@ -1,5 +1,7 @@
+#pragma once
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
@@ -12,7 +14,20 @@ class InetAddr
     :_addr(addr)
     {
         _port=ntohs(_addr.sin_port);
-        _ip=inet_ntoa(_addr.sin_addr);
+       // _ip=inet_ntoa(_addr.sin_addr);
+       char ipbuffer[64];
+        inet_ntop(AF_INET,&_addr.sin_addr,ipbuffer,sizeof(ipbuffer));
+        _ip=ipbuffer;
+    }
+    InetAddr(std::string &ip,uint16_t port)
+    :_ip(ip)
+    ,_port(port)
+    {
+        //主机转网络
+        memset(&_addr,0,sizeof(_addr));
+        _addr.sin_family=AF_INET;
+        inet_pton(AF_INET,_ip.c_str(),&_addr.sin_addr);
+        _addr.sin_port=htons(_port);
     }
     ~InetAddr()
     {}
@@ -24,7 +39,7 @@ class InetAddr
     {
         return _ip;
     }
-    const struct sockAddr_in &NetAddr()
+    const struct sockaddr_in &NetAddr()
     {
         return _addr;
     }

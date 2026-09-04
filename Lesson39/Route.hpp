@@ -4,8 +4,10 @@
 #include <vector>
 #include "InetAddr.hpp"
 #include "Log.hpp"
+#include"Mutex.hpp"
 
 using namespace LogModule;
+using namespace MutexModule;
 class Route
 {
     public:
@@ -15,15 +17,22 @@ class Route
     {}
     void MessageRoute(int sockfd,const std::string &message,InetAddr &peer)
     {
-        if(!Exist(peer))
+        LockGuard lockguard(_mutex);
+        if (!IsExist(peer))
         {
             Adduser(peer);
         }
         std::string send_message = peer.StringAddr() + "# " + message;
         for(auto &user : _online_user)
         {
-            sendto(sockfd,send_message.c_str(),send_message,size(),0,(const struct  sockaddr *)&(user.NetAddr()));
-
+            sendto(
+    sockfd,
+    send_message.c_str(),
+    send_message.size(),
+    0,
+    reinterpret_cast<const struct sockaddr*>(&(user.NetAddr())),
+    sizeof(struct sockaddr_in)
+);
         }
         if(message=="QUIT")
         {
@@ -50,7 +59,7 @@ class Route
         }
         void DeleteUser(InetAddr &peer)
         {
-            for(auto iter=_online_user,begin();iter!=_online_user.end();iter++)
+            for(auto iter=_online_user.begin();iter!=_online_user.end();iter++)
             {
                 if(*iter==peer)
                 {
@@ -61,5 +70,6 @@ class Route
             }
         }
     private:
-    std::vector<InetAddr> _online_user;
+        std::vector<InetAddr> _online_user;
+        Mutex _mutex; 
 };

@@ -53,10 +53,7 @@ class UdpServer
                 InetAddr client(peer);
 
                 // 3. 调用Dict::Translate()
-                std::string response = _func(buffer, client);
-
-                // 4. 把翻译结果发送回客户端
-                sendto(  _sockfd,response.c_str(), response.size(), 0, reinterpret_cast<struct sockaddr *>(&peer),len  );
+                _func(_sockfd, buffer, client);
             }
         }
         void Init()

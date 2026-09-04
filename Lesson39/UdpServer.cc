@@ -4,6 +4,7 @@
 #include "UdpServer.hpp"
 #include "Route.hpp"
 #include "Thread.hpp"
+#include "ThreadPool.hpp"
 
 using namespace ThreadPoolModule;
 // 仅仅是用来进行测试的
@@ -31,13 +32,17 @@ int main(int argc, char *argv[])
     Route r;
 
     // 2. 线程池
-    auto tp = ThreadPool<task_t>::GetInstance();
+   auto tp = ThreadPool<task_t>::GetInstance();
 
-    // 3. 网络服务器对象，提供通信功能
-    std::unique_ptr<UdpServer> usvr = std::make_unique<UdpServer>(port, [&r, &tp](int sockfd, const std::string &message, InetAddr&peer){
-        task_t t = std::bind(Route::MessageRoute, &r, sockfd, message, peer);
-        tp->Enqueue(t);
-    });
+std::unique_ptr<UdpServer> usvr =
+    std::make_unique<UdpServer>(
+        port,
+        [&r, tp](int sockfd, const std::string& message, InetAddr& peer)
+        {
+            task_t t = std::bind(
+                &Route::MessageRoute, &r, sockfd, message, peer);
+            tp->Enqueue(t);
+        });
     
     usvr->Init();
     usvr->Start();

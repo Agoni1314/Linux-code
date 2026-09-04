@@ -55,7 +55,7 @@ namespace ThreadPoolModule
             for (auto &thread : _threads)
             {
                 thread.Start();
-                LOG(LogLevel::INFO) << "start new thread success: " << thread.Name();
+                //LOG(LogLevel::INFO) << "start new thread success: " << thread.Name();
             }
         }
 
