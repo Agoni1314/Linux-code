@@ -1,0 +1,74 @@
+#pragma once
+
+#include "Common.hpp"
+#include "Log.hpp"
+#include "InetAddr.hpp"
+#include <cerrno>
+#include <memory>
+#include <pthread.h>
+#include <signal.h>
+
+using namespace LogModule;
+
+using ioservice_t = std::function<void(std::shared_ptr<Socket> &sock, InetAddr &client)>;
+
+
+
+class TcpServer 
+{
+public:
+    TcpServer(uint16_t port,ioservice_t service)
+        : _port(port),
+          _listensockfd(std::make_unique<TcpSocket>()),
+          _isrunning(false),
+          _service(service)
+    {
+        _listensockptr->BuildTcpSocketMethod(_port);
+    }
+
+     void Start()
+    {
+        _isrunning = true;
+        while(_isrunning)
+        {
+            InetAddr client;
+            auto sock = _listensockptr->Accept(&client); // 1. 和client通信sockfd 2. client 网络地址
+            if(sock == nullptr)
+            {
+                continue;
+            }
+            LOG(LogLevel::DEBUG) << "accept success ...";
+
+            // sock && client
+            pid_t id = fork();
+            if(id < 0)
+            {
+                LOG(LogLevel::FATAL) << "fork error ...";
+                exit(FORK_ERR);
+            }
+            else if(id == 0)
+            {
+                // 子进程 -> listensock
+                _listensockptr->Close();
+                if(fork() > 0)
+                    exit(OK);
+                // 孙子进程在执行任务，已经是孤儿了
+                _service(sock, client);
+                exit(OK);
+            }
+            else
+            {
+                // 父进程 -> sock
+                sock->Close();
+                pid_t rid = ::waitpid(id, nullptr, 0);
+                (void)rid;
+            }
+        }
+        _isrunning = false;
+    }
+private:
+    uint16_t _port;
+    int _listensockfd;
+    bool _isrunning;
+    iosrevice_t _service;
+};
