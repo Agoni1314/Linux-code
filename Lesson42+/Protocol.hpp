@@ -1,8 +1,10 @@
+#pragma once
+#include "Socket.hpp"
 #include <iostream>
 #include <string>
 #include <memory>
 #include <jsoncpp/json/json.h>
-#include "Socket.hpp"
+#include <functional>
 
 // 实现一个自定义的网络版本的计算器
 
@@ -13,6 +15,11 @@ using namespace SocketModule;
 // 如何要做序列化和反序列化：
 // 1. 我们自己写(怎么做) ---> 往往不具备很好的扩展性
 // 2. 使用现成的方案(这个是我们要写的) ---> json -> jsoncpp
+
+// content_len jsonstring
+// 50\r\n{"x": 10, "y" : 20, "oper" : '+'}\r\n
+// 50
+// {"x": 10, "y" : 20, "oper" : '+'}
 class Request
 {
 public:
@@ -26,16 +33,17 @@ public:
     {
         // _x = 10 _y = 20, _oper = '+'
         // "10" "20" '+' : 用空格作为分隔符
-        std::string s;
         Json::Value root;
         root["x"] = _x;
         root["y"] = _y;
-        root["oper"] = _oper;
+        root["oper"] = _oper; // ?
 
         Json::FastWriter writer;
-        std::string s = Write.write(root);
+        std::string s = writer.write(root);
         return s;
     }
+
+    // {"x": 10, "y" : 20, "oper" : '+'}
     bool Deserialize(std::string &in)
     {
         // "10" "20" '+' -> 以空格作为分隔符 -> 10 20 '+'
@@ -46,11 +54,14 @@ public:
         {
             _x = root["x"].asInt();
             _y = root["y"].asInt();
-            _oper = root["oper"].asInt();
+            _oper = root["oper"].asInt(); //?
         }
         return ok;
     }
     ~Request() {}
+    int X() { return _x; }
+    int Y() { return _y; }
+    char Oper() { return _oper; }
 
 private:
     int _x;
@@ -87,6 +98,7 @@ public:
         }
         return ok;
     }
+    ~Response() {}
     void SetResult(int res)
     {
         _result = res;
@@ -95,30 +107,22 @@ public:
     {
         _code = code;
     }
-    void ShowResult()
-    {
-        std::cout << "计算结果是: " << _result << "[" << _code << "]" << std::endl;
-    }
-
-    ~Response() {}
 
 private:
     int _result; // 运算结果，无法区分清楚应答是计算结果，还是异常值
-    int _code;   // 0:sucess, 1,2,3,4->不同的运算异常的情况
+    int _code;   // 0:sucess, 1,2,3,4->不同的运算异常的情况, 约定！！！！
 };
+
+const std::string sep = "\r\n";
+
+using func_t = std::function<Response(Request &req)>;
 
 // 协议(基于TCP的)需要解决两个问题：
 // 1. request和response必须得有序列化和反序列化功能
 // 2. 你必须保证，读取的时候，读到完整的请求(TCP, UDP不用考虑)
-
-const std::string sep = "\r\n";
-using func_t = std::function<Response(Request &req)>;
 class Protocol
 {
 public:
-    Protocol()
-    {
-    }
     Protocol(func_t func) : _func(func)
     {
     }
@@ -160,15 +164,13 @@ public:
     }
     void GetRequest(std::shared_ptr<Socket> &sock, InetAddr &client)
     {
-        std::string inbuffer;
+        // 读取
+        std::string buffer_queue;
         while (true)
         {
-            int n = sock->Recv(&inbuffer);
+            int n = sock->Recv(&buffer_queue);
             if (n > 0)
             {
-                std::cout << "-----------request_buffer--------------" << std::endl;
-                std::cout << buffer_queue << std::endl;
-                std::cout << "------------------------------------" << std::endl;
                 std::string json_package;
                 // 1. 解析报文，提取完整的json请求，如果不完整，就让服务器继续读取
                 bool ret = Decode(buffer_queue, &json_package);
@@ -177,14 +179,6 @@ public:
                 // 我敢100%保证，我一定拿到了一个完整的报文
                 // {"x": 10, "y" : 20, "oper" : '+'} -> 你能处理吗？
                 // 2. 请求json串，反序列化
-                std::cout << "-----------request_Json--------------" << std::endl;
-                std::cout << json_package << std::endl;
-                std::cout << "------------------------------------" << std::endl;
-
-                std::cout << "-----------request_buffer--------------" << std::endl;
-                std::cout << buffer_queue << std::endl;
-                std::cout << "------------------------------------" << std::endl;
-
                 Request req;
                 bool ok = req.Deserialize(json_package);
                 if (!ok)
@@ -209,59 +203,10 @@ public:
             }
             else
             {
-                LOG(LogLevel::INFO) << "client:" << client.StringAddr() << "Quit!";
+                LOG(LogLevel::WARNING) << "client:" << client.StringAddr() << ", recv error";
                 break;
             }
         }
-    }
-    bool GetResponse(std::shared_ptr<Socket> &client, std::string &resp_buff, Response *resp)
-    {
-        // 面向字节流,要保证每一次都是完整的字符串
-        while (true)
-        {
-            int n = client->Recv(&resp_buff);
-            if (n > 0)
-            {
-                std::cout << "-----------request_buffer--------------" << std::endl;
-                std::cout << resp_buff << std::endl;
-                std::cout << "------------------------------------" << std::endl;
-                std::string json_package;
-                // 1. 解析报文，提取完整的json请求，如果不完整，就让服务器继续读取
-                bool ret = Decode(resp_str, &json_package);
-                if (!ret)
-                    continue;
-                std::cout << "-----------request_json--------------" << std::endl;
-                std::cout << json_package << std::endl;
-                std::cout << "------------------------------------" << std::endl;
-                // 反序列化
-                Response resp;
-                resp->Deserialize(json_package);
-                return true;
-            }
-            else if (n == 0)
-            {
-                std::cout << "server quit" << std::endl;
-                return false;
-            }
-            else
-            {
-                std::cout << "recv error" << std::endl;
-                return false;
-            }
-        }
-    }
-    Request BuidRequestString(int x, int y, char oper)
-    {
-        // 构建一个完整的请求
-        Request req(x, y, oper);
-        // 序列化
-        std::string json_req = req.Serialize();
-
-        std::cout << "------------json_req string------------" << std::endl;
-        std::cout << json_req << std::endl;
-        std::cout << "---------------------------------------" << std::endl;
-        // 添加长度报头
-        return Encode(json_req);
     }
     ~Protocol()
     {
@@ -271,4 +216,5 @@ private:
     // 因为我们用的是多进程
     // Request _req;
     // Response _resp;
+    func_t _func;
 };
