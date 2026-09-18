@@ -28,6 +28,10 @@ class TcpServer : public NoCopy
                 LOG(LogLevel::FATAL) << "socket error";
                 exit(SOCKET_ERR);
             }
+            int opt = 1;
+            setsockopt(_listensockfd, SOL_SOCKET, SO_REUSEADDR, &opt,sizeof(opt));
+            InetAddr loacl(_port);
+            int n = bind(_listensockfd,loacl.,local.);
         }
 
     private:

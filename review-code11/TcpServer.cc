@@ -17,6 +17,9 @@ int main(int argc,char *argv[])
     {
         return command.Excute(request, client);
     };
-    
+
+    std::unique_ptr<TcpServer> server =std::make_unique<TcpServer>(port, handler);
+    server->Init();
+    server->
     return 0;
 }
