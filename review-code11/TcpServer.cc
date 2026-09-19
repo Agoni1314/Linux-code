@@ -20,6 +20,6 @@ int main(int argc,char *argv[])
 
     std::unique_ptr<TcpServer> server =std::make_unique<TcpServer>(port, handler);
     server->Init();
-    server->
+    server->Run();
     return 0;
 }
