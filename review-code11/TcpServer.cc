@@ -3,6 +3,10 @@
 #include "Command.hpp"
 #include "TcpServer.hpp"
 
+void Usage(std::string proc)
+{
+    std::cerr << "Usage: " << proc << " server_ip server_port" << std::endl;
+}
 int main(int argc,char *argv[])
 {
     if(argc != 2)
