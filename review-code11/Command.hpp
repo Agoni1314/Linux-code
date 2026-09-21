@@ -24,7 +24,7 @@ public:
     { // 函数不会修改当前 Command 对象的成员数据
         return _white_list.find(cmd) != _white_list.end();
     }
-    std::string Excute(std::string &cmd, InetAddr &addr)
+    std::string Execute(std::string &cmd, InetAddr &addr)
     {
         if (!IsSafeCommand(cmd))
         {

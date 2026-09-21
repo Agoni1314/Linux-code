@@ -11,14 +11,14 @@
 using namespace LogModule;
 const static int defaultsockfd = -1;
 const static int backlog = 8;
-using func_t = std::function<std::string(std::string &, InetAddr &)>;
+using func_t = std::function<std::string(const std::string &, InetAddr &peer)>;
 
 class TcpServer : public NoCopy
 {
     public:
         TcpServer(uint16_t port, func_t func)
             : _port(port),
-              _func(std::move(func)), // func 已经是构造函数内部的局部对象。把它移动到 _func 中，通常可以避免一次不必要的复制
+              _func(func), 
               _listensockfd(defaultsockfd),
               _isrunning(false)
         {} 
@@ -48,6 +48,42 @@ class TcpServer : public NoCopy
             }
 
             LOG(LogLevel::INFO) << "tcp server init success, listen fd: " << _listensockfd;
+        }
+        void Service(int sockfd,InetAddr &peer)
+        {
+            char buffer[1024];
+            while(true)
+            {
+                // ssize_t read(int fd, void buf[.count], size_t count);
+                ssize_t n = read(sockfd,buffer,sizeof(buffer)-1);
+                if(n>0)
+                {
+                    buffer[n] = 0; // 设置为C风格字符串， n<= sizeof(buffer)-1
+                    LOG(LogLevel::DEBUG) << peer.StringAddr() << " #" << buffer;
+                    std::string echo_string = _func(buffer,peer);
+                    write(sockfd,echo_string.c_str(),echo_string.size());
+                }
+                else if(n==0)
+                {
+                    LOG(LogLevel::DEBUG) << peer.StringAddr() << " 退出了...";
+                    close(sockfd);
+                    break;
+                }
+                else 
+                {
+                    LOG(LogLevel::DEBUG) << peer.StringAddr() << " 异常...";
+                    close(sockfd);
+                    break;
+                }
+            }
+        }
+        void *Routine(void* args)
+        {
+            pthread_detach(pthread_self());
+            ThreadData *td = static_cast<ThreadData *>(args);
+            td->tsvr->Service(td->sockfd, td->addr);
+            delete td;
+            return nullptr;
         }
         void Run()
         {

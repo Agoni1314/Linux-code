@@ -2,6 +2,7 @@
 #include <memory>
 #include "Command.hpp"
 #include "TcpServer.hpp"
+#include "Dict.hpp"
 
 void Usage(std::string proc)
 {
@@ -16,14 +17,12 @@ int main(int argc,char *argv[])
     }
     uint16_t port = static_cast<uint16_t>(std::stoi(argv[1]));
     Enable_Console_Log_Strategy();
-    Command command;
-    auto handler = [&command](const std::string &request, InetAddr &client)
-    {
-        return command.Excute(request, client);
-    };
 
-    std::unique_ptr<TcpServer> server =std::make_unique<TcpServer>(port, handler);
-    server->Init();
-    server->Run();
+    Dict d;
+    std::unique_ptr<TcpServer> tsvr = std::make_unique<TcpServer>(port,
+                                                                  std::bind(&Command::Execute, &cmd, std::placeholders::_1, std::placeholders::_2));
+    //std::unique_ptr<TcpServer> tsvr = std::make_unique<TcpServer>(port, [&d](const std::string &word, InetAddr &addr){return d.Translate(word, addr); });
+    tsvr->Init();
+    tsvr->Run();
     return 0;
 }
