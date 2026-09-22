@@ -52,10 +52,10 @@ public:
         auto iter = _dict.find(word);
         if (iter == _dict.end())
         {
-            LOG(LogLevel::DEBUG) << "进入到了翻译模块, [" << client.ip() << " : " << client.port() << "]# " << word << "->None";
+            LOG(LogLevel::DEBUG) << "进入到了翻译模块, [" << client.Ip() << " : " << client.Port() << "]# " << word << "->None";
             return "None";
         }
-        LOG(LogLevel::DEBUG) << "进入到了翻译模块, [" << client.ip() << " : " << client.port() << "]# " << word << "->" << iter->second;
+        LOG(LogLevel::DEBUG) << "进入到了翻译模块, [" << client.Ip() << " : " << client.Port() << "]# " << word << "->" << iter->second;
         return iter->second;
     }
 

@@ -161,5 +161,5 @@ namespace ThreadPoolModule
     ThreadPool<T> *ThreadPool<T>::inc = nullptr;
 
     template <typename T>
-    Mutex ThreadPool<T>::_lock;
+    MutexModule::Mutex ThreadPool<T>::_lock;
 }

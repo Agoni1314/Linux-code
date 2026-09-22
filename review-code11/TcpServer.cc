@@ -18,6 +18,7 @@ int main(int argc,char *argv[])
     uint16_t port = static_cast<uint16_t>(std::stoi(argv[1]));
     Enable_Console_Log_Strategy();
 
+    Command cmd;
     Dict d;
     std::unique_ptr<TcpServer> tsvr = std::make_unique<TcpServer>(port,
                                                                   std::bind(&Command::Execute, &cmd, std::placeholders::_1, std::placeholders::_2));
