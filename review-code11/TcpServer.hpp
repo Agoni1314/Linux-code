@@ -77,12 +77,12 @@ class TcpServer : public NoCopy
                 }
             }
         }
-        void *Routine(void* args)
+        static void *Routine(void *args)
         {
             pthread_detach(pthread_self());
-            ThreadData *td = static_cast<ThreadData *>(args);
-            td->tsvr->Service(td->sockfd, td->addr);
-            delete td;
+
+            std::unique_ptr<ThreadData> data(static_cast<ThreadData *>(args));
+            data->tsvr->Service(data->sockfd, data->addr);
             return nullptr;
         }
         void Run()
