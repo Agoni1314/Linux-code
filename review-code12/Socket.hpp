@@ -23,6 +23,9 @@ namespace SocketModule
         virtual void ListemOrDie(int backlog) = 0;
         virtual std::shared_ptr<Socket> Accept(InetAddr &client) = 0;
         virtual void Close() = 0;
+        virtual int Recv(std::string *out) = 0;
+        virtualint Send(const std::string &message) = 0;
+        virtual int Connect(const std::string &server_ip, uint16_t port) = 0;
 
     public:
         void BuildTcpSocketMethod(uint16_t port, int backlog) // 模板方法模式
@@ -30,6 +33,10 @@ namespace SocketModule
             SocketOrDie();
             BindOrDie(port);
             ListemOrDie(backlog);
+        }
+        void BuildTcpClientSocketMethod()
+        {
+            SocketOrDie();
         }
     };
 
@@ -40,8 +47,9 @@ namespace SocketModule
         TcpServer() : _sockfd(defaultfd);
         {
         }
-    TcpServer(int fd):_sockfd(fd)
-    {}
+        TcpServer(int fd):_sockfd(fd)
+        {}
+    
         void SocketOrDie() override
         {
             _sockfd = ::socket(AF_INET, SOCK_STREAM, 0);
@@ -89,11 +97,17 @@ namespace SocketModule
             client->SetAddr(peer);
             return std::make_shared<TcpServer>(fd);
         }
-        void Close() //??
+        int Connect(const std::string &server_ip, uint16_t port)
+        {
+            InetAddr server(server_ip, port);
+            return ::connect(_sockfd, server.NetAddrPtr(), server.NetAddrLen());
+        }
+         void Close() //??
         {
             if (_sockfd >= 0)
                 ::close(_sockfd);
         }
+       
 
     private:
         int _sockfd;
