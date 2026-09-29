@@ -163,7 +163,68 @@ void GetRequest(std::shared_ptr<Socket> &sock, InetAddr &client)
    sock->Close();
 }
 
+bool GetResponse(std::shared_ptr<Socket> &client, std::string &resp_buff, Response *resp)
+{
+    // 面向字节流,你怎么保证，你的client读到的 一个网络字符串，就一定是一个完整的请求呢？？
+    while (true)
+    {
+        int n = client->Recv(&resp_buff);
+        if (n > 0)
+        {
+            // std::cout << "-----------resp_buffer--------------" << std::endl;
+            // std::cout << resp_buff << std::endl;
+            // std::cout << "------------------------------------" << std::endl;
 
+            // 成功
+            std::string json_package;
+            // 1. 解析报文，提取完整的json请求，如果不完整，就让服务器继续读取
+            // bool ret = Decode(resp_buff, &json_package);
+            // if (!ret)
+            //     continue;
+
+            while (Decode(resp_buff, &json_package))
+            {
+                // std::cout << "----------response json---------------" << std::endl;
+                // std::cout << json_package << std::endl;
+                // std::cout << "--------------------------------------" << std::endl;
+
+                // std::cout << "-----------resp_buffer--------------" << std::endl;
+                // std::cout << resp_buff << std::endl;
+                // std::cout << "------------------------------------" << std::endl;
+                // 2. 走到这里，我能保证，我一定拿到了一个完整的应答json报文
+                // 2. 反序列化
+                resp->Deserialize(json_package);
+            }
+            return true;
+        }
+        else if (n == 0)
+        {
+            std::cout << "server quit " << std::endl;
+            return false;
+        }
+        else
+        {
+            std::cout << "recv error" << std::endl;
+            return false;
+        }
+    }
+}
+std::string BuildRequestString(int x, int y, char oper)
+{
+    // 1. 构建一个完整的请求
+    Request req(x, y, oper);
+
+    // 2. 序列化
+    std::string json_req = req.Serialize();
+
+    // // 2.1 debug
+    // std::cout << "------------json_req string------------" << std::endl;
+    // std::cout << json_req << std::endl;
+    // std::cout << "---------------------------------------" << std::endl;
+
+    // 3. 添加长度报头
+    return Encode(json_req);
+}
 
 private:
 Request _req;
