@@ -5,20 +5,22 @@
 #include <iostream>
 #include <string>
 #include <memory>
+#include <sstream>
+#include "Log.hpp"
 #include <unordered_map>
 #include "Util.hpp"
 
 using namespace SocketModule;
-
+using namespace LogModule;
 const std::string gspace = " ";
 const std::string glinespace = "\r\n";
 const std::string glinesep = ": ";
 const std::string webroot="./wwwroot"
 const std::string homepage ="./index.html"
-    class Http
+
+class Http
 {
     public:
-   
     Http(uint16_t port):tsvrp(std::make_unique<TcpServer>())
     {
 
@@ -27,6 +29,29 @@ const std::string homepage ="./index.html"
     {}
     void HandlerHttpRquest(std::shared_ptr<Socket> &sock, InetAddr &client)
     {
+        //收到请求
+        std::string httpreqstr;
+        int n = sock->Recv(&httpreqstr);
+        if(n>0)
+        {
+            //未对报文完整性进行审核
+            HttpRequest req;
+            req.Deserialize(httpreqstr);
+            HttpResponse resp;
+            resp.SetTargetFile(req.Uri());
+            resp.MakeResponse();
+            /* HttpResponse resp;
+            resp._version = "HTTP/1.1";
+            resp._code = 200; // success
+            resp._desc = "OK";
+            LOG(LogLevel::DEBUG) << "用户请求: " << filename;
+            bool res = Util::ReadFileContent(filename, &(resp._text)); // 浏览器请求的资源，一定会存在吗？出错呢？
+            (void)res; */
+            std::string response_str = resp.Serialize();
+            sock->Send(response_str);
+        }
+      
+
         //#ifndef DEBUG
         //#define DEBUG
 #ifdef DEBUG
@@ -60,11 +85,34 @@ class HttpRequest
 public:
     HttpRequest() {}
     std::string Serialize() {}
-    std::strng Deserialize(std::string &reqstr){}
+    void ParseReqline(std::string &reqstr)
+    {
+        std::stringstream ss(reqline);
+        ss >> _method >> uri >> _version;
+    }
+        std::strng Deserialize(std::string &reqstr)
+    {
+        //提取请求行
+        std::string reqline;
+        bool res = Util::ReadOneLine(reqstr, &reqline, &linespace);
+        LOG(LogLevel::DEBUG) << reqline;
+       
+        // 对请求行反序列化
+        ParseReqline(reqline);
+        LOG(LogLevel::DEBUG) << "_method: " << _method;
+        LOG(LogLevel::DEBUG) << "_uri: " << _uri;
+        LOG(LogLevel::DEBUG) << "_version: " << _version;
+        if (_uri == "/") 
+            _uri = webroot + _uri + homepage; // ./wwwroot/index.html
+        else
+            _uri = webroot + _uri; // ./wwwroot/a/b/c.html
+        return true;
+    }
+    std::string Uri() { return uri; }
 
 private:
     std::string _method;
-    std::string _url;
+    std::string _uri;
     std::string _version;
     std::string _blankline;
     std::string _text;
@@ -87,12 +135,29 @@ class HttpResponse
         }
         return status_line + resp_header + _blankline + _text;
     }
+    void SetTargetFile(const std::string &target)
+    {
+        _targetfile = target;
+    }
+    bool Deserialize(std::string &reqstr)
+    {
 
-    private:
-        std::string _version;
-        int _code;
-        std::string _desc;
-        std::unordered_map<std::string, std::string> _headers;
-        std::string _blankline;
-        std::string _text;
+    }
+    bool MakeResponse()
+    {
+        bool res = Util::ReadFileContent(_targetfile, &_text); // 浏览器请求的资源，一定会存在吗？出错呢？
+        if (!res)
+        {
+            _code = 404;
+            _desc = "Not Found";
+        }
+    }
+
+    private : std::string _version;
+    int _code;
+    std::string _desc;
+    std::unordered_map<std::string, std::string> _headers;
+    std::string _blankline;
+    std::string _text;
+    std::string _targetfile;
 };

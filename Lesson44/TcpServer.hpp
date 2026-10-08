@@ -1,0 +1,75 @@
+#pragma once
+
+#include <functional>
+#include <iostream>
+#include <memory>
+#include <utility>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+#include "Socket.hpp"
+
+using namespace SocketModule;
+using namespace LogModule;
+
+using ioservice_t =
+    std::function<void(std::shared_ptr<Socket> &sock, InetAddr &client)>;
+
+class TcpServer
+{
+public:
+    TcpServer(uint16_t port, ioservice_t service)
+        : _port(port),
+          _listensockptr(std::make_unique<TcpSocket>()),
+          _isrunning(false),
+          _service(std::move(service))
+    {
+        _listensockptr->BuildTcpSocketMethod(_port);
+    }
+
+    void Start(ioservice_t callback)
+    {
+        _isrunning = true;
+        while (_isrunning)
+        {
+            InetAddr client;
+            auto sock = _listensockptr->Accept(client);
+            if (sock == nullptr)
+            {
+                continue;
+            }
+
+            LOG(LogLevel::DEBUG) << "accept success ...";
+
+            pid_t id = ::fork();
+            if (id < 0)
+            {
+                LOG(LogLevel::FATAL) << "fork error ...";
+                exit(FORK_ERR);
+            }
+            else if (id == 0)
+            {
+                _listensockptr->Close();
+                if (fork() > 0)
+                {
+                    exit(OK);
+                }
+                callback(sock, client);
+                sock->Close();
+                exit(OK);
+            }
+            else
+            {
+                sock->Close();
+                pid_t rid = ::waitpid(id, nullptr, 0);
+                (void)rid;
+            }
+        }
+    }
+
+private:
+    uint16_t _port;
+    std::unique_ptr<Socket> _listensockptr;
+    bool _isrunning;
+};

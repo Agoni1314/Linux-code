@@ -35,4 +35,5 @@ public:
         bigstr.erase(0, pos + sep.size());
         return true;
     }
+    
 };
