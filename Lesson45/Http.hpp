@@ -30,7 +30,10 @@ class Http
     {}
     void HandlerHttpRquest(std::shared_ptr<Socket> &sock, InetAddr &client)
     {
-        //收到请求
+        std::cout << "########################";
+        std::cout << HttpRequest;
+        std::cout << "########################";
+        // 收到请求
         std::string httpreqstr;
         int n = sock->Recv(&httpreqstr);
         if(n>0)
@@ -40,7 +43,11 @@ class Http
             req.Deserialize(httpreqstr);
             HttpResponse resp;
             resp.SetTargetFile(req.Uri());
-            resp.MakeResponse();
+            if(resp.MakeResponse())
+            {
+                std::string response_str = resp.Serialize();
+                sock->Send(response_str);
+            }
             /* HttpResponse resp;
             resp._version = "HTTP/1.1";
             resp._code = 200; // success
@@ -48,8 +55,7 @@ class Http
             LOG(LogLevel::DEBUG) << "用户请求: " << filename;
             bool res = Util::ReadFileContent(filename, &(resp._text)); // 浏览器请求的资源，一定会存在吗？出错呢？
             (void)res; */
-            std::string response_str = resp.Serialize();
-            sock->Send(response_str);
+           
         }
       
 
@@ -168,6 +174,11 @@ class HttpResponse
     }
     bool MakeResponse()
     {
+        if(_targetfile=="./wwwroot/favicon.ico")
+        {
+            LOG(LogLevel::DEBUG) << "用户请求: " << _targetfile << "忽略它";
+            return false;
+        }
         int filesize = 0;
         bool res = Util::ReadFileContent(_targetfile, &_text); // 浏览器请求的资源，一定会存在吗？出错呢？
         if (!res)
