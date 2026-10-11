@@ -172,6 +172,23 @@ class HttpResponse
             return;
         _headers.insert(std::make_pair(key, value));
     }
+    std::string  Uri2Suffix(const std::string &targetfile)
+    {
+        std::string suffix = targetfile.rfind();
+        if(pos==std::string::npos)
+        {
+            return "text/html";
+        }
+        std::string suffix = targetfile.substr(pos);
+        if(suffix=".html" | suffix==".htm")
+            return "text/html";
+        else if(sduffix==".jpg")
+            return "image/jpeg";
+        else if (suffix == "png")
+            return "image/png";
+        else
+            return "";
+    }
     bool MakeResponse()
     {
         if(_targetfile=="./wwwroot/favicon.ico")
@@ -191,9 +208,12 @@ class HttpResponse
         }
         else
         {
+            LOG(LogLevel::DEBUG) << "读取文件" << _targetfile;
             SetCode(200);
             filesize = Util::FileSize(_targetfile);
-            SetHeader("Content-Length", std::to_string(filesize));
+            std::string suffix = Uri2Suffix(_targetfile);
+            setHeader("Content-Type",suffix);
+             SetHeader("Content-Length", std::to_string(filesize));
         }
         retuern true;
     }
