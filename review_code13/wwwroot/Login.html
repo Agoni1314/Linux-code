@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户登录</title>
+    <style>
+        /* 全局样式重置 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* 页面背景与居中布局 */
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 登录卡片容器 */
+        .login-container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 380px;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            margin: 20px;
+        }
+
+        /* 标题区域 */
+        .login-header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .login-header h2 {
+            color: #333;
+            font-size: 26px;
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        /* 表单组样式 */
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+            /* 用于定位显示密码图标 */
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #444;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+        }
+
+        /* 显示密码的小眼睛图标 (使用CSS绘制简单示意) */
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 38px;
+            cursor: pointer;
+            color: #999;
+            font-size: 12px;
+            user-select: none;
+        }
+
+        /* 记住我 & 忘记密码 */
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        .form-options label {
+            display: flex;
+            align-items: center;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .form-options input[type="checkbox"] {
+            margin-right: 5px;
+        }
+
+        .form-options a {
+            color: #764ba2;
+            text-decoration: none;
+        }
+
+        .form-options a:hover {
+            text-decoration: underline;
+        }
+
+        /* 登录按钮 */
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* 底部注册链接 */
+        .footer-links {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .footer-links a {
+            color: #764ba2;
+            text-decoration: none;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-container">
+        <div class="login-header">
+            <h2>欢迎回来</h2>
+            <p>请登录您的账户以继续</p>
+        </div>
+
+        <form id="loginForm" onsubmit="return handleLogin(event)">
+            <!-- 账号输入 -->
+            <div class="form-group">
+                <label for="username">账号 / 邮箱</label>
+                <input type="text" id="username" name="username" placeholder="请输入您的账号" required>
+            </div>
+
+            <!-- 密码输入 -->
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" placeholder="请输入您的密码" required>
+                <span class="toggle-password" onclick="togglePassword()">显示</span>
+            </div>
+
+            <!-- 选项 -->
+            <div class="form-options">
+                <label>
+                    <input type="checkbox" name="remember"> 记住我
+                </label>
+                <a href="#">忘记密码?</a>
+            </div>
+
+            <!-- 登录按钮 -->
+            <button type="submit" class="submit-btn">立即登录</button>
+        </form>
+
+        <div class="footer-links">
+            还没有账号？ <a href="register.html">立即注册</a>
+        </div>
+    </div>
+
+    <script>
+        // 显示/隐藏密码功能
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleBtn = document.querySelector('.toggle-password');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleBtn.textContent = '隐藏';
+            } else {
+                passwordInput.type = 'password';
+                toggleBtn.textContent = '显示';
+            }
+        }
+
+        // 模拟登录处理
+        function handleLogin(event) {
+            event.preventDefault(); // 阻止表单默认提交
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // 这里可以添加实际的登录逻辑（如AJAX请求）
+            console.log("尝试登录:", { username, password });
+            alert("登录请求已发送！\n账号: " + username);
+        }
+    </script>
+</body>
+
+</html>

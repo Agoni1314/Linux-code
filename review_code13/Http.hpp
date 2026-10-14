@@ -87,6 +87,19 @@ public:
         }
         return ststus_line + resp_header + _blankline + _text;
     }
+    void SetTargetFile(const std::string &target)
+    {
+        _targetfile = target;
+    }
+    void MakeResponse()
+    {
+        bool res = Util::ReadFileContent(_targetfile,&_text);
+        if(!res)
+        {
+            _code = 404;
+            _dosc = "Not Found";
+        }
+    }
     bool Deserialize(std::string &reqstr)
     {
         return true;
@@ -100,6 +113,8 @@ private:
     std::unordered_map<std::string, std::string> _headers;
     std::string _blankline;
     std::string _text;
+
+    std::string _targetfile;
 };
 
 class Http
@@ -119,14 +134,17 @@ public:
         {
             HttpRequest req;
             req.Deserialize(httpreqstr);
-            std::string filename = req.Uri();
-            Httpresponse resp;
-            resp._version = "HTTP/1.1";
-            resp._code = 200;
-            resp._desc = "OK";
-            LOG(LogLevel::DEBUG) << "用户请求" << filename;
-            bool res = Util::ReadFileContent(filename, &(resp._text));
-            (void)res;
+            HttpResponse resp;
+            resp.SetTargetFile(req,Uri());
+            resp.MakeResponse();
+            /*  std::string filename = req.Uri();
+             Httpresponse resp;
+             resp._version = "HTTP/1.1";
+             resp._code = 200;
+             resp._desc = "OK";
+             LOG(LogLevel::DEBUG) << "用户请求" << filename;
+             bool res = Util::ReadFileContent(filename, &(resp._text));
+             (void)res; */
             std::string response_str = resp.Serialize();
             sock->Send(response_str);
         }
