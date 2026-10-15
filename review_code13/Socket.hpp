@@ -109,7 +109,7 @@ namespace SocketModule
         int Recv(std::string *out) override
         {
             // 流式读取，不关心读到的是什么
-            char buffer[4096];
+            char buffer[4096*4];
             ssize_t n = ::recv(_sockfd, buffer, sizeof(buffer) - 1, 0);
             if (n > 0)
             {

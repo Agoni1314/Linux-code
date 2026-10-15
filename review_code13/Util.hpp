@@ -9,17 +9,29 @@ class Util
     public:
         static bool ReadFileContent(const std::string &filename,std::string *out)
         {
-            std::ifstream in(filename);
-            if(!in.is_open())
+
+            /*  std::ifstream in(filename);
+              if(!in.is_open())
+              {
+                  return false;
+              }
+              std::string line;
+              while(std::getline(in,line))
+              {
+                  *out += line;
+              }
+              in.close();*/
+
+            int filesize = FileSize(filename);
+            if(filesize>0)
             {
-                return false;
+                std::ifstream in(filename);
+                if(!in.is_open())
+                    return false;
+                out->resize(filesize);
+                in.read((char *)(out->c_str()), filesize);
+                in.close();
             }
-            std::string line;
-            while(std::getline(in,line))
-            {
-                *out += line;
-            }
-            in.close();
             return true;
         }
         static bool ReadOneLine(std::string &bigstr,std::string *out,const std::string &sep)
@@ -31,6 +43,20 @@ class Util
             bigstr.erase(0,pos+sep.size());
             return true;
         }
+        static std::string FileSize(const std::string &filename)
+        {
+            std:
+                ifstream in(filename.std::ios::binary);
+                if(!in.is_open())
+                {
+                    return -1;
+                }
+                in.seekg(0, in.end);
+                int filesize = in.tellg();
+                in.seekg(0,in.beg);
+                in.close();
+                return filesize;
+            }
 
     private:
 };

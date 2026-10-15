@@ -13,6 +13,7 @@ const std::string glinespace = "\r\n";
 const std::string glinesep = ": ";
 const std::string webroot = "./wwwroot";
 const std::string homepage = "/index.html";
+const std::string page_404 = "/404.html";
 
 class HttpRequest
 {
@@ -70,7 +71,7 @@ class Httpresponse
     friend class Http;
 
 public:
-    Httpresponse() : _blankline(glinespace)
+    Httpresponse() : _blankline(glinespace),_version("HTTP/1.0")
     {
     }
     ~Httpresponse()
@@ -91,14 +92,80 @@ public:
     {
         _targetfile = target;
     }
-    void MakeResponse()
+    void SetCode(_code)
     {
-        bool res = Util::ReadFileContent(_targetfile,&_text);
-        if(!res)
+        _code = code;
+        switch(_code)
         {
-            _code = 404;
-            _dosc = "Not Found";
+            case 200:
+                _desc="OK";
+                break;
+            case 404:
+                _desc = "NotFound";
+                break;
+            defalut:
+                break;
         }
+    }
+    void SetHeader(const std::string &key,const std::string &value)
+    {
+        auto iter = _headers.find(key);
+        if(iter!=headers.end())
+        {
+            return;
+        }
+        _headers.insert(std::make_pair(key, value));
+    }
+    std::string Uri2Suffix(const std::string &targetfile)
+    {
+        // ./wwwroot/a/b/c.html
+        auto pos = targetfile.rfind(".");
+        if (pos == std::string::npos)
+        {
+            return "text/html";
+        }
+
+        std::string suffix = targetfile.substr(pos);
+        if (suffix == ".html" || suffix == ".htm")
+            return "text/html";
+        else if (suffix == ".jpg")
+            return "image/jpeg";
+        else if (suffix == "png")
+            return "image/png";
+        else
+            return "";
+    }
+    bool MakeResponse()
+    {
+        if (_targetfile == "./wwwroot/favicon.ico")
+        {
+            LOG(LogLevel::DEBUG) << "用户请求: " << _targetfile << "忽略它";
+            return false;
+        }
+        int filesize = 0;
+        bool res = Util::ReadFileContent(_targetfile, &_text); // 浏览器请求的资源，一定会存在吗？出错呢？
+        if (!res)
+        {
+            _text = "";
+            LOG(LogLevel::WARNING) << "client want get : " << _targetfile << " but not found";
+            SetCode(404);
+            _targetfile = webroot + page_404;
+            filesize = Util::FileSize(_targetfile);
+            Util::ReadFileContent(_targetfile, &_text);
+            std::string suffix = Uri2Suffix(_targetfile);
+            SetHeader("Content-Type", suffix);
+            SetHeader("Content-Length", std::to_string(filesize));
+        }
+        else
+        {
+            LOG(LogLevel::DEBUG) << "读取文件: " << _targetfile;
+            SetCode(200);
+            filesize = Util::FileSize(_targetfile);
+            std::string suffix = Uri2Suffix(_targetfile);
+            SetHeader("Conent-Type", suffix);
+            SetHeader("Content-Length", std::to_string(filesize));
+        }
+        return true;
     }
     bool Deserialize(std::string &reqstr)
     {
@@ -136,7 +203,11 @@ public:
             req.Deserialize(httpreqstr);
             HttpResponse resp;
             resp.SetTargetFile(req,Uri());
-            resp.MakeResponse();
+            if(resp.MakeResponse())
+            {
+                std::string response_str = resp.Serialize();
+                sock->Send(response_str);
+            }
             /*  std::string filename = req.Uri();
              Httpresponse resp;
              resp._version = "HTTP/1.1";
@@ -145,8 +216,7 @@ public:
              LOG(LogLevel::DEBUG) << "用户请求" << filename;
              bool res = Util::ReadFileContent(filename, &(resp._text));
              (void)res; */
-            std::string response_str = resp.Serialize();
-            sock->Send(response_str);
+           
         }
 
 // #ifndef DEBUG
