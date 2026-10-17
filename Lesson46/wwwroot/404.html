@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - 页面未找到</title>
+    <style>
+        /* 全局样式 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+            overflow: hidden;
+            /* 防止动画导致滚动条出现 */
+        }
+
+        /* 中心卡片容器 */
+        .error-container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 500px;
+            padding: 50px 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            margin: 20px;
+            position: relative;
+        }
+
+        /* 巨大的404数字 */
+        .error-code {
+            font-size: 120px;
+            font-weight: 900;
+            color: #f0f2f5;
+            /* 浅灰色背景字 */
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 0;
+            line-height: 1;
+            user-select: none;
+        }
+
+        /* 内容区域 (位于数字上方) */
+        .content {
+            position: relative;
+            z-index: 1;
+            margin-top: 40px;
+        }
+
+        /* 幽灵图标动画 */
+        .ghost-icon {
+            font-size: 80px;
+            color: #764ba2;
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+            /* 漂浮动画 */
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-15px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .content h2 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .content p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 15px;
+        }
+
+        /* 返回按钮 */
+        .home-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(118, 75, 162, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .home-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(118, 75, 162, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="error-container">
+        <!-- 背景大数字 -->
+        <div class="error-code">404</div>
+
+        <div class="content">
+            <!-- 幽灵图标 (这里用SVG绘制一个简单的幽灵，不需要外部图标库) -->
+            <svg class="ghost-icon" viewBox="0 0 24 24" width="80" height="80" fill="currentColor">
+                <path
+                    d="M12 2C7.58 2 4 5.58 4 10v10a2 2 0 002 2h2a2 2 0 002-2v-2h4v2a2 2 0 002 2h2a2 2 0 002-2V10c0-4.42-3.58-8-8-8zm0 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z" />
+            </svg>
+
+            <h2>哎呀！页面迷路了</h2>
+            <p>您访问的页面可能已被移除、更名或暂时不可用。<br>请检查网址是否正确。</p>
+
+            <!-- 返回首页按钮 -->
+            <a href="index.html" class="home-btn">返回首页</a>
+        </div>
+    </div>
+
+</body>
+
+</html>
